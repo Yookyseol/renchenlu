@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试 - 壬辰录网站</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: sans-serif; padding: 20px; background: #f8f9fa; }
+.test-box { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+h1 { color: #2c5f7c; margin-bottom: 20px; }
+h2 { color: #2b2b2b; margin-bottom: 10px; font-size: 18px; }
+p { color: #666; line-height: 1.6; }
+.success { color: green; }
+.error { color: red; }
+.info { color: #2c5f7c; background: #e8f4f8; padding: 10px; border-radius: 4px; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h1>壬辰录网站测试页面</h1>
+
+<div class="test-box">
+<h2>测试1: 页面加载状态</h2>
+<div id="test1-result"></div>
+</div>
+
+<div class="test-box">
+<h2>测试2: JavaScript执行</h2>
+<div id="test2-result"></div>
+</div>
+
+<div class="test-box">
+<h2>测试3: DOM元素检查</h2>
+<div id="test3-result"></div>
+</div>
+
+<div class="test-box">
+<h2>测试4: 网络请求测试</h2>
+<div id="test4-result"></div>
+</div>
+
+<div class="info">
+<strong>请打开浏览器开发者工具（F12）查看Console输出</strong><br>
+网站地址：<a href="https://yookyseol.github.io/renchenlu/网站开发/renchenlu-site/网站源码/">https://yookyseol.github.io/renchenlu/网站开发/renchenlu-site/网站源码/</a>
+</div>
+
+<script>
+console.log('测试页面已加载');
+
+// 测试1: 页面加载状态
+document.getElementById('test1-result').innerHTML = '<p class="success">✓ 页面加载成功</p>';
+
+// 测试2: JavaScript执行
+try {
+  const testVar = '测试变量';
+  console.log('JavaScript执行正常，测试变量:', testVar);
+  document.getElementById('test2-result').innerHTML = '<p class="success">✓ JavaScript执行正常</p>';
+} catch (e) {
+  console.error('JavaScript执行错误:', e);
+  document.getElementById('test2-result').innerHTML = '<p class="error">✗ JavaScript执行错误: ' + e.message + '</p>';
+}
+
+// 测试3: DOM元素检查
+const mainContent = document.getElementById('mainContent');
+const nav = document.querySelector('.bottom-nav');
+document.getElementById('test3-result').innerHTML = 
+  '<p>mainContent元素: ' + (mainContent ? '✓ 存在' : '✗ 不存在') + '</p>' +
+  '<p>bottom-nav元素: ' + (nav ? '✓ 存在' : '✗ 不存在') + '</p>';
+
+// 测试4: 网络请求测试
+fetch('https://yookyseol.github.io/renchenlu/网站开发/renchenlu-site/网站源码/assets/js/app.js')
+  .then(response => {
+    console.log('app.js响应状态:', response.status);
+    document.getElementById('test4-result').innerHTML = 
+      '<p>app.js加载状态: ' + (response.ok ? '✓ 成功 (状态码: ' + response.status + ')' : '✗ 失败') + '</p>';
+    
+    if (response.ok) {
+      return response.text();
+    }
+  })
+  .then(data => {
+    if (data) {
+      console.log('app.js内容长度:', data.length, '字符');
+      console.log('app.js前100字符:', data.substring(0, 100));
+    }
+  })
+  .catch(error => {
+    console.error('app.js加载错误:', error);
+    document.getElementById('test4-result').innerHTML += 
+      '<p class="error">✗ app.js加载失败: ' + error.message + '</p>';
+  });
+
+// 测试app.js中的关键函数
+fetch('https://yookyseol.github.io/renchenlu/网站开发/renchenlu-site/网站源码/assets/js/app.js')
+  .then(response => response.text())
+  .then(code => {
+    console.log('检查app.js中的关键函数:');
+    const hasNavigateTo = code.includes('function navigateTo');
+    const hasRenderText = code.includes('function renderText');
+    const hasLoadTextContent = code.includes('function loadTextContent');
+    
+    console.log('navigateTo函数:', hasNavigateTo ? '✓ 存在' : '✗ 不存在');
+    console.log('renderText函数:', hasRenderText ? '✓ 存在' : '✗ 不存在');
+    console.log('loadTextContent函数:', hasLoadTextContent ? '✓ 存在' : '✗ 不存在');
+    
+    document.getElementById('test4-result').innerHTML += 
+      '<p>navigateTo函数: ' + (hasNavigateTo ? '✓ 存在' : '✗ 不存在') + '</p>' +
+      '<p>renderText函数: ' + (hasRenderText ? '✓ 存在' : '✗ 不存在') + '</p>' +
+      '<p>loadTextContent函数: ' + (hasLoadTextContent ? '✓ 存在' : '✗ 不存在') + '</p>';
+  })
+  .catch(error => {
+    console.error('检查函数时出错:', error);
+  });
+</script>
+</body>
+</html>

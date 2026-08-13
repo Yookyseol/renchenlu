@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>壬辰录·梦见诸葛亮 资料库</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="">
+<!-- 高德地图API -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=e1f4dde6fe70b3b28c121d8193016a7b"></script>
+</head>
+<body>
+
+<!-- 主内容区 -->
+<main class="main-content" id="mainContent">
+  <!-- 动态内容将在这里加载 -->
+</main>
+
+<!-- 底部导航栏 -->
+<nav class="bottom-nav">
+  <a href="#text" class="bottom-nav-item active" data-page="text">
+    <span class="nav-label">文本</span>
+  </a>
+  <a href="#literature" class="bottom-nav-item" data-page="literature">
+    <span class="nav-label">文献</span>
+  </a>
+  <a href="#shiliao" class="bottom-nav-item" data-page="shiliao">
+    <span class="nav-label">史料</span>
+  </a>
+  <a href="#research" class="bottom-nav-item" data-page="research">
+    <span class="nav-label">研究</span>
+  </a>
+  <a href="#profile" class="bottom-nav-item" data-page="profile">
+    <span class="nav-label">我的</span>
+  </a>
+</nav>
+
+<!-- 加载状态 -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p>加载中...</p>
+</div>
+
+<!-- 人物详情弹窗 -->
+<div class="modal-overlay" id="characterModal">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose" aria-label="关闭">关闭</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 战役详情弹窗 -->
+<div class="modal-overlay" id="battleModal">
+  <div class="modal-content">
+    <button class="modal-close" id="battleModalClose" aria-label="关闭">关闭</button>
+    <div id="battleModalBody"></div>
+  </div>
+</div>
+
+<script src="assets/js/app.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+</body>
+</html>
