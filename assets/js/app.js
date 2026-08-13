@@ -138,7 +138,7 @@
     }
   }
 
-  // ========== 下拉式筛选器 ==========
+  // ========== 下拉式筛选器（微信风格两级） ==========
 
   function buildDropdownFilter(categories) {
     let html = '<div class="dropdown-filter">';
@@ -150,7 +150,7 @@
     html += '<div class="filter-groups">';
 
     categories.forEach(function(cat, idx) {
-      html += '<div class="filter-group">';
+      html += '<div class="filter-group" data-group="' + cat.id + '">';
       html += '<div class="filter-group-title">' + cat.label + '</div>';
       html += '<div class="filter-options">';
       cat.options.forEach(function(opt) {
@@ -181,6 +181,20 @@
     }
   };
 
+  window.app.refreshFilter = function() {
+    const filterDropdown = document.getElementById('filterDropdown');
+    if (!filterDropdown) return;
+
+    const isMengjian = currentNovel === 'mengjian';
+    // 重新构建筛选器，确保版本组正确显示/隐藏
+    const novelGroup = filterDropdown.querySelector('[data-group="novel"]');
+    const typeGroup = filterDropdown.querySelector('[data-group="type"]');
+    const versionGroup = filterDropdown.querySelector('[data-group="version"]');
+    if (versionGroup) {
+      versionGroup.style.display = isMengjian ? 'none' : 'block';
+    }
+  };
+
   window.app.resetFilter = function() {
     document.querySelectorAll('.filter-chip').forEach(function(btn) {
       btn.classList.remove('active');
@@ -188,13 +202,14 @@
     currentNovel = 'renchenlu';
     currentContentType = 'original';
     currentVersion = RENCHENLU_ORIGINAL[0].key;
+    window.app.refreshFilter();
     window.app.toggleFilter();
-    loadTextContent();
+    renderText();
   };
 
   window.app.confirmFilter = function() {
     window.app.toggleFilter();
-    loadTextContent();
+    renderText();
   };
 
   window.app.switchTimelinePeriod = function(period) {
@@ -225,15 +240,59 @@
       return { value: v.key, label: v.key };
     }).filter(function(v, i, arr) { return arr.findIndex(function(x) { return x.value === v.value; }) === i; }) : [];
 
-    let filterHTML = buildDropdownFilter([
-      { id: 'novel', label: '作品', options: novelOptions },
-      { id: 'type', label: '类型', options: typeOptions },
-      { id: 'version', label: '版本', options: versionOptions }
-    ]);
+    // 构建筛选器HTML：壬辰录显示三级，梦见诸葛亮只显示两级
+    let filterHTML = '<div class="dropdown-filter">';
+    filterHTML += '<div class="dropdown-header" onclick="window.app.toggleFilter()">';
+    filterHTML += '<span class="dropdown-title">筛选</span>';
+    filterHTML += '<span class="dropdown-arrow" id="filterArrow">▼</span>';
+    filterHTML += '</div>';
+    filterHTML += '<div class="dropdown-content" id="filterDropdown" style="display:none">';
+    filterHTML += '<div class="filter-groups">';
+
+    // 第一级：作品
+    filterHTML += '<div class="filter-group" data-group="novel">';
+    filterHTML += '<div class="filter-group-title">作品</div>';
+    filterHTML += '<div class="filter-options">';
+    novelOptions.forEach(function(opt) {
+      filterHTML += '<button class="filter-chip" data-cat="novel" data-value="' + opt.value + '">' + opt.label + '</button>';
+    });
+    filterHTML += '</div></div>';
+
+    // 第二级：类型
+    filterHTML += '<div class="filter-group" data-group="type">';
+    filterHTML += '<div class="filter-group-title">类型</div>';
+    filterHTML += '<div class="filter-options">';
+    typeOptions.forEach(function(opt) {
+      filterHTML += '<button class="filter-chip" data-cat="type" data-value="' + opt.value + '">' + opt.label + '</button>';
+    });
+    filterHTML += '</div></div>';
+
+    // 第三级：版本（只有壬辰录显示）
+    if (!isMengjian) {
+      filterHTML += '<div class="filter-group" data-group="version">';
+      filterHTML += '<div class="filter-group-title">版本</div>';
+      filterHTML += '<div class="filter-options">';
+      versionOptions.forEach(function(opt) {
+        filterHTML += '<button class="filter-chip" data-cat="version" data-value="' + opt.value + '">' + opt.label + '</button>';
+      });
+      filterHTML += '</div></div>';
+    }
+
+    filterHTML += '</div>';
+    filterHTML += '<div class="dropdown-footer">';
+    filterHTML += '<button class="btn-reset" onclick="window.app.resetFilter()">重置</button>';
+    filterHTML += '<button class="btn-confirm" onclick="window.app.confirmFilter()">确认</button>';
+    filterHTML += '</div>';
+    filterHTML += '</div></div>';
 
     main.innerHTML = '<section class="page-section active" id="page-text">' +
+      '<div class="page-header">' +
+        '<button class="back-btn" onclick="window.history.back(); return false;">‹</button>' +
+        '<div class="page-title">壬辰录·梦见诸葛亮 资料库</div>' +
+        '<div class="action-btn" onclick="window.app.toggleFilter()">⋯</div>' +
+      '</div>' +
       filterHTML +
-      '<div class="content-area" id="textContent">' +
+      '<div class="content-area content-with-header" id="textContent">' +
         '<div class="loading-state"><div class="spinner"></div><p>加载中...</p></div>' +
       '</div>' +
     '</section>';
@@ -248,7 +307,12 @@
 
         if (cat === 'novel') {
           currentNovel = value;
+          // 切换作品时，刷新筛选器显示
+          window.app.refreshFilter();
           currentVersion = RENCHENLU_ORIGINAL[0].key;
+          currentContentType = 'original';
+          document.querySelectorAll('.filter-chip[data-cat="type"]').forEach(function(b) { b.classList.remove('active'); });
+          document.querySelector('.filter-chip[data-cat="type"][data-value="original"]')?.classList.add('active');
         } else if (cat === 'type') {
           currentContentType = value;
           currentVersion = RENCHENLU_ORIGINAL[0].key;
@@ -313,12 +377,17 @@
     const main = document.getElementById('mainContent');
 
     main.innerHTML = '<section class="page-section active" id="page-shiliao">' +
+      '<div class="page-header">' +
+        '<button class="back-btn" onclick="window.history.back(); return false;">‹</button>' +
+        '<div class="page-title">史料</div>' +
+        '<div></div>' +
+      '</div>' +
       '<div class="shiliao-tabs">' +
         '<div class="shiliao-tab ' + (currentShiliaoTab === 'map' ? 'active' : '') + '" data-tab="map">背景地图</div>' +
         '<div class="shiliao-tab ' + (currentShiliaoTab === 'timeline' ? 'active' : '') + '" data-tab="timeline">时间线</div>' +
         '<div class="shiliao-tab ' + (currentShiliaoTab === 'battles' ? 'active' : '') + '" data-tab="battles">战役</div>' +
       '</div>' +
-      '<div class="content-area" id="shiliaoContent">' +
+      '<div class="content-area content-with-header" id="shiliaoContent">' +
         '<div class="loading-state"><div class="spinner"></div><p>加载中...</p></div>' +
       '</div>' +
     '</section>';
@@ -352,7 +421,7 @@
     let html = '<div class="period-filter" style="margin-bottom:12px;">' +
       '<button class="filter-btn ' + (currentTimelinePeriod === 'renchenlu' ? 'active' : '') + '" onclick="window.app.switchTimelinePeriod(\'renchenlu\')">壬辰倭乱时期</button>' +
       '<button class="filter-btn ' + (currentTimelinePeriod === 'mengjian' ? 'active' : '') + '" onclick="window.app.switchTimelinePeriod(\'mengjian\')">1908年日占时期</button>' +
-    '</div><div class="timeline-vertical">';
+    '</div><div class="timeline-vertical" style="max-height:400px;overflow-y:auto">';
 
     data.forEach(function(t, i) {
       html += '<div class="timeline-node" data-index="' + i + '">' +
@@ -367,18 +436,22 @@
   }
 
   async function renderMapTab(container) {
-    container.innerHTML = '<div class="map-container">' +
+    container.innerHTML = '<div class="map-container" style="max-height:500px;overflow-y:auto">' +
       '<div class="map-tabs" id="mapTabs">' +
         '<button class="map-tab-btn active" data-map="war">战争地图</button>' +
+        '<button class="map-tab-btn" data-map="guanyu">关羽崇拜分布</button>' +
+        '<button class="map-tab-btn" data-map="zhuge">诸葛亮崇拜分布</button>' +
         '<button class="map-tab-btn" data-map="colonial">日本侵略史</button>' +
       '</div>' +
       '<div id="mapContainer" style="width:100%;height:400px;border-radius:8px;margin-top:12px;overflow:hidden"></div>' +
       '<div class="map-legend" style="padding:12px;font-size:13px;color:var(--color-text-light)">' +
         '<p><strong>图例：</strong></p>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px">' +
-          '<span><span style="display:inline-block;width:12px;height:12px;background:#c0392b;border-radius:50%;margin-right:4px"></span>日军进攻路线</span>' +
-          '<span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:50%;margin-right:4px"></span>朝鲜/明军反击</span>' +
-          '<span><span style="display:inline-block;width:12px;height:12px;background:#3498db;border-radius:50%;margin-right:4px"></span>海战地点</span>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">' +
+          '<span class="map-legend-item"><span class="legend-dot" style="background:#c0392b"></span>壬辰倭乱**1592-1598进攻路线</span>' +
+          '<span class="map-legend-item"><span class="legend-dot" style="background:#8b4513"></span>甲午战争**1894-1895侵略路线</span>' +
+          '<span class="map-legend-item"><span class="legend-dot" style="background:#2c5f7c"></span>日韩合并**1910吞并标记</span>' +
+          '<span class="map-legend-item"><span class="legend-dot" style="background:#8b0000"></span>九一八事变**1931侵占东北</span>' +
+          '<span class="map-legend-item"><span class="legend-dot" style="background:#b22222"></span>全面侵华**1937-1945侵略标记</span>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -387,6 +460,7 @@
       btn.addEventListener('click', function() {
         document.querySelectorAll('.map-tab-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
+        updateMapLegend(btn.dataset.map);
         renderInteractiveMap(btn.dataset.map);
       });
     });
@@ -428,55 +502,93 @@
     };
     L.control.layers(baseMaps).addTo(leafletMap);
 
-    // 关键城市标注
+    // 关键城市标注（黑色圆点）
     const cityLabels = [
-      { lat: 35.18, lng: 129.08, name: '釜山', note: '日军登陆起点' },
-      { lat: 35.22, lng: 128.60, name: '梁山', note: '李舜臣首战' },
-      { lat: 35.87, lng: 128.60, name: '大邱', note: '日军北路进攻' },
-      { lat: 36.56, lng: 128.80, name: '安东', note: '日军北进目标' },
-      { lat: 37.57, lng: 127.00, name: '汉城（首尔）', note: '朝鲜首都，陷落' },
-      { lat: 36.35, lng: 127.38, name: '大田', note: '忠清道重镇' },
-      { lat: 39.03, lng: 125.75, name: '平壤', note: '明军收复目标' },
-      { lat: 39.55, lng: 125.13, name: '义州', note: '宣祖北逃终点' },
-      { lat: 34.75, lng: 126.35, name: '闲山岛', note: '李舜臣大捷' },
-      { lat: 34.85, lng: 127.38, name: '鸣梁', note: '奇迹海战' },
-      { lat: 34.60, lng: 127.85, name: '露梁', note: '战争终结' },
-      { lat: 34.96, lng: 127.13, name: '顺天', note: '明军围攻倭城' }
+      { lat: 35.18, lng: 129.08, name: '釜山', note: '日军登陆起点', desc: '1592年4月13日，加藤清正率第一军从釜山浦登陆，壬辰倭乱正式爆发。釜山是朝鲜半岛南端重要港口，日军登陆后迅速向北推进。' },
+      { lat: 35.22, lng: 128.60, name: '梁山', note: '李舜臣首战', desc: '1592年4月18日，李舜臣率朝鲜水军在梁山海域首战告捷，打击日军海上补给线，这是壬辰倭乱初期的重要海战胜利。' },
+      { lat: 35.87, lng: 128.60, name: '大邱', note: '日军北路进攻', desc: '日军北路军进攻目标，位于庆尚道腹地，是连接釜山与汉城的重要节点。' },
+      { lat: 36.56, lng: 128.80, name: '安东', note: '日军北进目标', desc: '朝鲜名门望族聚集地，日军北进战略目标之一。' },
+      { lat: 37.57, lng: 127.00, name: '汉城（首尔）', note: '朝鲜首都陷落', desc: '1592年5月2日，日军攻占汉城，朝鲜国王宣祖仓皇北逃至义州。汉城陷落标志着朝鲜王朝初期抵抗的崩溃。' },
+      { lat: 36.35, lng: 127.38, name: '大田', note: '忠清道重镇', desc: '位于朝鲜半岛中部，是连接南北的重要交通枢纽。' },
+      { lat: 39.03, lng: 125.75, name: '平壤', note: '明军收复目标', desc: '朝鲜北部最大城市，1593年1月27日，明军李如松部与朝鲜军队联合收复平壤，扭转了战局。' },
+      { lat: 39.55, lng: 125.13, name: '义州', note: '宣祖北逃终点', desc: '朝鲜西北部边境城市，与明朝鸭绿江对岸相连。宣祖逃至义州后请求明朝出兵援助。' },
+      { lat: 34.75, lng: 126.35, name: '闲山岛', note: '李舜臣大捷', desc: '1592年7月8日，李舜臣以龟船为主力，在闲山岛附近海域大破日军舰队，歼敌舟船六十余艘，创造海战奇迹。' },
+      { lat: 34.85, lng: 127.38, name: '鸣梁', note: '奇迹海战', desc: '1597年10月26日，李舜臣以12艘船击败日军130余艘，创造世界海战史上的奇迹。' },
+      { lat: 34.60, lng: 127.85, name: '露梁', note: '战争终结', desc: '1598年11月19日，李舜臣与明将陈璘联合歼灭日军主力，李舜臣在露梁海战中殉国，标志着壬辰倭乱正式结束。' },
+      { lat: 34.96, lng: 127.13, name: '顺天', note: '明军围攻倭城', desc: '1598年8月10日，明军与朝鲜军队联合围攻顺天倭城，小西行长败退。' }
     ];
 
-    cityLabels.forEach(function(city) {
-      var marker = L.marker([city.lat, city.lng], {
-        icon: L.divIcon({
-          className: 'city-label',
-          html: '<div class="city-label-text">' + city.name + '</div>',
-          iconSize: [80, 24],
-          iconAnchor: [40, 12]
-        })
-      }).addTo(leafletMap);
-      marker.bindPopup('<div class="map-popup"><h4>' + city.name + '</h4><p>' + city.note + '</p></div>');
-      markers.push(marker);
-    });
-
-    // 添加标记点
     const markers = [];
     const routes = [];
 
+    cityLabels.forEach(function(city) {
+      // 黑色圆点标记
+      var marker = L.circleMarker([city.lat, city.lng], {
+        radius: 8,
+        fillColor: '#333',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9
+      }).addTo(leafletMap);
+
+      // 地名标签（跟随标记）- 设为可穿透，不影响点击
+      var label = L.marker([city.lat, city.lng], {
+        icon: L.divIcon({
+          className: 'city-label',
+          html: '<div class="city-label-text">' + city.name + '</div>',
+          iconSize: [60, 20],
+          iconAnchor: [30, 10]
+        }),
+        interactive: false
+      }).addTo(leafletMap);
+
+      // 点击弹出详细信息卡片
+      marker.bindPopup('<div class="map-popup">' +
+        '<h4>' + city.name + '</h4>' +
+        '<p><strong>' + city.note + '</strong></p>' +
+        '<p style="margin-top:8px;font-size:13px;color:#666">' + city.desc + '</p>' +
+      '</div>');
+
+      markers.push(marker);
+      markers.push(label);
+    });
+
     if (mapType === 'war') {
-      // 添加战役标记
-      TIMELINE_DATA.forEach(function(t) {
-        const marker = L.marker([t.lat, t.lng]).addTo(leafletMap);
-        marker.bindPopup('<div class="map-popup"><h4>' + t.event + '</h4><p>' + t.desc + '</p><p><strong>出处：</strong>' + t.source + '</p></div>');
-        markers.push(marker);
+      // 添加战役标记（使用自定义彩色圆点）
+      const battles = [
+        { lat: 35.18, lng: 129.08, name: '日军登陆釜山', date: '1592.4.13', type: 'japan', desc: '加藤清正率第一军登陆，战争爆发' },
+        { lat: 35.22, lng: 128.60, name: '梁山之战', date: '1592.4.18', type: 'korea', desc: '李舜臣首战告捷' },
+        { lat: 37.57, lng: 127.00, name: '汉城失守', date: '1592.5.2', type: 'japan', desc: '日军攻占汉城，宣祖北逃' },
+        { lat: 34.75, lng: 126.35, name: '闲山岛海战', date: '1592.7.8', type: 'korea', desc: '李舜臣大破日军舰队' },
+        { lat: 39.03, lng: 125.75, name: '平壤收复战', date: '1593.1.27', type: 'china', desc: '明军李如松部收复平壤' },
+        { lat: 37.45, lng: 126.70, name: '碧蹄馆之战', date: '1593.4.11', type: 'china', desc: '明军遭伏击，损失较大' },
+        { lat: 34.85, lng: 127.38, name: '鸣梁海战', date: '1597.10.26', type: 'korea', desc: '李舜臣以12船破130船' },
+        { lat: 34.96, lng: 127.13, name: '顺天之战', date: '1598.8.10', type: 'china', desc: '明军围攻顺天倭城' },
+        { lat: 34.60, lng: 127.85, name: '露梁海战', date: '1598.11.19', type: 'korea', desc: '李舜臣殉国，战争终结' }
+      ];
+
+      battles.forEach(function(b) {
+        const color = b.type === 'japan' ? '#c0392b' : b.type === 'korea' ? '#27ae60' : '#3498db';
+        const circle = L.circleMarker([b.lat, b.lng], {
+          radius: 10,
+          fillColor: color,
+          color: '#fff',
+          weight: 2,
+          fillOpacity: 0.9
+        }).addTo(leafletMap);
+        circle.bindPopup('<div class="map-popup"><h4>' + b.name + '</h4><p><strong>时间：</strong>' + b.date + '</p><p>' + b.desc + '</p></div>');
+        markers.push(circle);
       });
 
-      // 绘制日军进攻路线（从釜山到汉城再到平壤）
+      // 绘制日军进攻路线（从釜山经大邱到汉城）
       const attackRoute = [
         [35.18, 129.08],  // 釜山
-        [35.50, 128.50],
-        [36.00, 128.00],
-        [36.50, 127.80],
+        [35.50, 128.70],
+        [35.87, 128.60],  // 大邱
+        [36.20, 128.30],
+        [36.50, 128.00],
         [37.00, 127.50],
-        [37.57, 127.00]  // 汉城
+        [37.57, 127.00]   // 汉城
       ];
       const routeLine = L.polyline(attackRoute, {
         color: '#c0392b',
@@ -484,7 +596,7 @@
         opacity: 0.8,
         dashArray: '10, 5'
       }).addTo(leafletMap);
-      routeLine.bindPopup('<strong>日军进攻路线</strong><br>釜山 → 汉城（1592年）');
+      routeLine.bindPopup('<strong>日军进攻路线</strong><br>釜山 → 大邱 → 汉城（1592年）');
       routes.push(routeLine);
 
       // 绘制朝鲜/明军反击路线
@@ -503,23 +615,8 @@
       counterLine.bindPopup('<strong>朝鲜/明军反击路线</strong><br>闲山岛 → 平壤');
       routes.push(counterLine);
 
-      // 绘制海战位置标记
-      const navalBattles = [
-        { lat: 34.75, lng: 126.35, name: '闲山岛海战' },
-        { lat: 34.85, lng: 127.38, name: '鸣梁海战' },
-        { lat: 34.60, lng: 127.85, name: '露梁海战' }
-      ];
-      navalBattles.forEach(function(b) {
-        const circle = L.circleMarker([b.lat, b.lng], {
-          radius: 8,
-          fillColor: '#3498db',
-          color: '#fff',
-          weight: 2,
-          fillOpacity: 0.8
-        }).addTo(leafletMap);
-        circle.bindPopup('<div class="map-popup"><h4>' + b.name + '</h4><p>海战地点</p></div>');
-        markers.push(circle);
-      });
+      // 更新图例
+      updateMapLegend('war');
 
     } else if (mapType === 'provinces') {
       const provinces = [
@@ -537,24 +634,61 @@
         marker.bindPopup('<div class="map-popup"><h4>' + p.name + '</h4><p>首府：' + p.city + '</p></div>');
         markers.push(marker);
       });
-    } else if (mapType === 'zhuge') {
-      const zhugeSites = [
-        { name: '首尔武侯祠', lat: 37.55, lng: 126.98 },
-        { name: '平壤武侯祠', lat: 39.03, lng: 125.75 },
-        { name: '江陵武侯祠', lat: 38.11, lng: 128.75 },
-        { name: '济州武侯祠', lat: 33.47, lng: 126.83 },
-        { name: '山东琅琊', lat: 35.85, lng: 119.50 }
+      updateMapLegend('provinces');
+
+    } else if (mapType === 'guanyu') {
+      // 关羽崇拜分布图
+      const guanyuSites = [
+        { name: '汉城关羽祠', lat: 37.55, lng: 126.98, desc: '朝鲜首都关帝庙，祭祀关羽' },
+        { lat: 37.20, lng: 127.15, name: '水原华城', desc: '世界文化遗产，内有关帝庙' },
+        { lat: 36.65, lng: 127.38, name: '忠州纹桃寺', desc: '三国时代古刹，供奉关羽' },
+        { lat: 35.18, lng: 128.10, name: '晋州城墙', desc: '晋州城保卫战遗迹' },
+        { lat: 34.75, lng: 126.35, name: '闲山岛', desc: '李舜臣大捷之地，关羽象征' },
+        { lat: 35.22, lng: 129.08, name: '釜山广安里', desc: '日军登陆地，抗倭纪念' }
       ];
-      zhugeSites.forEach(function(s) {
-        const marker = L.marker([s.lat, s.lng]).addTo(leafletMap);
-        marker.bindPopup('<div class="map-popup"><h4>' + s.name + '</h4><p>诸葛亮崇拜遗址</p></div>');
+      guanyuSites.forEach(function(s) {
+        const marker = L.marker([s.lat, s.lng], {
+          icon: L.divIcon({
+            className: 'battle-marker',
+            html: '<div class="battle-marker-dot" style="background:#e74c3c"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          })
+        }).addTo(leafletMap);
+        marker.bindPopup('<div class="map-popup"><h4>' + s.name + '</h4><p>' + (s.desc || '关羽崇拜遗址') + '</p></div>');
         markers.push(marker);
       });
+      updateMapLegend('guanyu');
+
+    } else if (mapType === 'zhuge') {
+      // 诸葛亮崇拜分布图
+      const zhugeSites = [
+        { name: '首尔武侯祠', lat: 37.55, lng: 126.98, desc: '汉城武侯祠，祭祀诸葛亮' },
+        { lat: 39.03, lng: 125.75, name: '平壤武侯祠', desc: '平壤武侯祠遗址' },
+        { lat: 38.11, lng: 128.75, name: '江陵武侯祠', desc: '江陵地区武侯祭祀点' },
+        { lat: 33.47, lng: 126.83, name: '济州武侯祠', desc: '济州岛诸葛亮祭祀遗址' },
+        { lat: 37.50, lng: 126.80, name: '南山参拜地', desc: '首尔南山诸葛亮崇拜地' },
+        { lat: 36.35, lng: 127.38, name: '大田忠清道', desc: '忠清道诸葛亮信仰中心' }
+      ];
+      zhugeSites.forEach(function(s) {
+        const marker = L.marker([s.lat, s.lng], {
+          icon: L.divIcon({
+            className: 'battle-marker',
+            html: '<div class="battle-marker-dot" style="background:#3498db"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          })
+        }).addTo(leafletMap);
+        marker.bindPopup('<div class="map-popup"><h4>' + s.name + '</h4><p>' + s.desc + '</p></div>');
+        markers.push(marker);
+      });
+      updateMapLegend('zhuge');
+
     } else if (mapType === 'colonial') {
-      // 日本侵略史地图：甲午战争、壬辰倭乱、日韩合并、九一八事变、全面侵华
+      // 日本侵略史地图
       const japanAggression = [
+        { name: '壬辰倭乱（1592-1598）', lat: 36.0, lng: 127.5, desc: '日本入侵朝鲜半岛，历时七年半' },
         { name: '甲午战争（1894-1895）', lat: 37.57, lng: 126.98, desc: '中日甲午战争，日本获胜' },
-        { name: '壬辰倭乱（1592-1598）', lat: 36.0, lng: 127.5, desc: '日本入侵朝鲜' },
         { name: '日韩合并（1910）', lat: 37.55, lng: 126.98, desc: '朝鲜沦为日本殖民地' },
         { name: '九一八事变（1931）', lat: 41.8, lng: 123.4, desc: '日本侵占中国东北' },
         { name: '全面侵华（1937-1945）', lat: 39.9, lng: 116.4, desc: '日本全面侵华战争' }
@@ -571,16 +705,52 @@
         marker.bindPopup('<div class="map-popup"><h4>' + site.name + '</h4><p>' + site.desc + '</p></div>');
         markers.push(marker);
       });
+      updateMapLegend('colonial');
     }
 
     leafletMap._markers = markers;
     leafletMap._routes = routes;
   }
 
+  function updateMapLegend(mapType) {
+    const legendEl = document.querySelector('.map-legend');
+    if (!legendEl) return;
+
+    let legendHTML = '<p><strong>图例：</strong></p><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';
+
+    if (mapType === 'war') {
+      legendHTML +=
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#c0392b"></span>壬辰倭乱**日军进攻路线</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#27ae60"></span>壬辰倭乱**朝鲜/明军反击路线</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#3498db"></span>壬辰倭乱**关键战役地点</span>';
+    } else if (mapType === 'provinces') {
+      legendHTML +=
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#8e44ad"></span>朝鲜八道行政区划</span>';
+    } else if (mapType === 'guanyu') {
+      legendHTML +=
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#e74c3c"></span>关羽崇拜分布遗址</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#27ae60"></span>抗倭战争纪念地</span>';
+    } else if (mapType === 'zhuge') {
+      legendHTML +=
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#3498db"></span>诸葛亮崇拜分布遗址</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#9b59b6"></span>武侯祠遗址</span>';
+    } else if (mapType === 'colonial') {
+      legendHTML +=
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#c0392b"></span>壬辰倭乱**1592-1598侵略路线</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#8b4513"></span>甲午战争**1894-1895侵略路线</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#2c5f7c"></span>日韩合并**1910吞并标记</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#8b0000"></span>九一八事变**1931侵占东北</span>' +
+        '<span class="map-legend-item"><span class="legend-dot" style="background:#b22222"></span>全面侵华**1937-1945侵略标记</span>';
+    }
+
+    legendHTML += '</div>';
+    legendEl.innerHTML = legendHTML;
+  }
+
   async function renderBattlesTab(container) {
     battlesData = await loadJSON(CONFIG.dataPath + 'battles.json');
 
-    let html = '<div class="battle-list">';
+    let html = '<div class="battles-container">';
     battlesData.forEach(function(b) {
       html += '<div class="battle-card" onclick="window.app.showBattle(' + b.id + ')">' +
         '<div class="battle-header">' +
@@ -883,16 +1053,26 @@
     const main = document.getElementById('mainContent');
     main.innerHTML =
       '<section class="page-section active" id="page-research">' +
+      '<div class="page-header">' +
+        '<button class="back-btn" onclick="window.app.goBack()">←</button>' +
+        '<h1 class="page-title">研究</h1>' +
+        '<div class="header-action"></div>' +
+      '</div>' +
       '<div class="tab-bar">' +
-          '<div class="tab-item ' + (currentResearchTab === 'about' ? 'active' : '') + '" data-rtab="about">关于文本</div>' +
+          '<div class="tab-item ' + (currentResearchTab === 'about' ? 'active' : '') + '" data-rtab="about">文本研究</div>' +
           '<div class="tab-item ' + (currentResearchTab === 'literature' ? 'active' : '') + '" data-rtab="literature">文献研究</div>' +
-          '<div class="tab-item ' + (currentResearchTab === 'characters' ? 'active' : '') + '" data-rtab="characters">人物</div>' +
         '</div>' +
-        '<div class="content-area" id="researchContent">' +
+        '<div class="sub-tab-bar" id="researchSubTabs" style="display:' + (currentResearchTab === 'about' ? 'flex' : 'none') + '">' +
+          '<div class="sub-tab-item active" data-subtab="comparison">版本对比</div>' +
+          '<div class="sub-tab-item" data-subtab="findings">关键发现</div>' +
+          '<div class="sub-tab-item" data-subtab="characters">小说人物</div>' +
+        '</div>' +
+        '<div class="content-area content-with-header" id="researchContent">' +
           '<div class="loading-state"><div class="spinner"></div><p>加载中...</p></div>' +
         '</div>' +
       '</section>';
 
+    // 主Tab点击
     document.querySelectorAll('#page-research .tab-item').forEach(function(tab) {
       tab.addEventListener('click', function() {
         currentResearchTab = tab.dataset.rtab;
@@ -900,14 +1080,77 @@
       });
     });
 
+    // 子Tab点击
+    document.querySelectorAll('#researchSubTabs .sub-tab-item').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('#researchSubTabs .sub-tab-item').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        renderResearchSubContent(tab.dataset.subtab);
+      });
+    });
+
     const contentDiv = document.getElementById('researchContent');
     if (currentResearchTab === 'about') {
-      await renderResearchAbout(contentDiv);
+      renderResearchSubContent('comparison');
     } else if (currentResearchTab === 'literature') {
       await renderResearchLiterature(contentDiv);
-    } else if (currentResearchTab === 'characters') {
-      await renderResearchCharacters(contentDiv);
     }
+  }
+
+  function renderResearchSubContent(subtab) {
+    const contentDiv = document.getElementById('researchContent');
+    if (!contentDiv) return;
+    if (subtab === 'comparison') {
+      renderComparison(contentDiv);
+    } else if (subtab === 'findings') {
+      renderFindings(contentDiv);
+    } else if (subtab === 'characters') {
+      renderResearchCharacters(contentDiv);
+    }
+  }
+
+  function renderComparison(container) {
+    container.innerHTML = '<div class="content-section">' +
+      '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:8px">版本对比分析</h3>' +
+      '<p style="font-size:14px;color:var(--color-text-light);margin-bottom:12px">《壬辰录》现存七大主要版本，分属汉文与韩文谚文两大系统。</p>' +
+    '</div>' +
+    '<div class="content-section">' +
+      '<div class="version-table-wrapper">' +
+        '<table class="version-table">' +
+          '<thead><tr><th>序号</th><th>版本名称</th><th>字符数</th><th>语言</th><th>特点</th></tr></thead>' +
+          '<tbody>' +
+            '<tr><td>1</td><td>东洋文库</td><td>56,236字</td><td>汉文（文言文）</td><td>最完整繁本</td></tr>' +
+            '<tr><td>2</td><td>国立</td><td>37,034字</td><td>汉文（文言文）</td><td>略简于繁本</td></tr>' +
+            '<tr><td>3</td><td>精神文化</td><td>51,208字</td><td>汉文（白话小说体）</td><td>朝鲜官方整理</td></tr>' +
+            '<tr><td>4</td><td>柏克莱</td><td>11,772字</td><td>汉文（白话小说体）</td><td>简本代表</td></tr>' +
+            '<tr><td>5</td><td>莫斯科</td><td>49,139字</td><td>韩文谚文</td><td>1966年俄文整理</td></tr>' +
+            '<tr><td>6</td><td>小说集版</td><td>28,939字</td><td>韩文谚文</td><td>洪吉童传合集</td></tr>' +
+            '<tr><td>7</td><td>手抄本</td><td>2,484字</td><td>汉文（简体）</td><td>民间手抄版本</td></tr>' +
+          '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderFindings(container) {
+    const findings = [
+      { title: '李舜臣形象的跨文本传播', desc: '从《壬辰录》到《梦见诸葛亮》，李舜臣形象从历史人物演变为民族象征，在梦中被反复提及，成为朝鲜民族抵抗精神的代表。', type: '文学' },
+      { title: '关羽崇拜与民族意识', desc: '《壬辰录》中关羽形象被赋予抗日义兵的象征意义，与朝鲜本土信仰融合，关帝庙成为民族精神的凝聚点。', type: '文化' },
+      { title: '版本差异中的意识形态', desc: '繁本强调忠义，简本突出义兵，韩文谚文版更注重民族情感表达，各版本反映了不同历史时期的政治诉求。', type: '文献' },
+      { title: '梦游叙事的历史映射', desc: '《梦见诸葛亮》借梦游三国叙事，暗喻1908年日占朝鲜的民族危机，主人公梦见诸葛亮实为借古讽今。', type: '文学' },
+      { title: '诸葛亮形象的本土化', desc: '诸葛亮在朝鲜文学中从历史人物变为贤相象征，与韩国"忠臣"文化结合，成为理想政治家的原型。', type: '文化' }
+    ];
+    let html = '<div class="content-section">' +
+      '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:12px">关键研究发现</h3>';
+    findings.forEach(function(f) {
+      html += '<div class="finding-card">' +
+        '<span class="finding-type">' + f.type + '</span>' +
+        '<h4 style="font-size:15px;margin:8px 0 4px;color:var(--color-text)">' + f.title + '</h4>' +
+        '<p style="font-size:13px;color:var(--color-text-light);line-height:1.6">' + f.desc + '</p>' +
+      '</div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
   }
 
   async function renderResearchCharacters(container) {
@@ -975,70 +1218,8 @@
   }
 
   async function renderResearchAbout(container) {
-    if (charactersData.length === 0) charactersData = await loadJSON(CONFIG.dataPath + 'characters.json');
-
-    let html = '<div class="content-section">' +
-      '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:8px">版本对比分析</h3>' +
-      '<p style="font-size:14px;color:var(--color-text-light);margin-bottom:12px">《壬辰录》现存七大主要版本，分属汉文与韩文谚文两大系统。</p>' +
-    '</div>';
-
-    html += '<div class="content-section">' +
-      '<div class="version-table-wrapper">' +
-        '<table class="version-table">' +
-          '<thead><tr><th>序号</th><th>版本名称</th><th>字符数</th><th>语言</th></tr></thead>' +
-          '<tbody>' +
-            '<tr><td>1</td><td>东洋文库</td><td>56,236字</td><td>汉文（文言文）</td></tr>' +
-            '<tr><td>2</td><td>国立</td><td>37,034字</td><td>汉文（文言文）</td></tr>' +
-            '<tr><td>3</td><td>精神文化</td><td>51,208字</td><td>汉文（白话小说体）</td></tr>' +
-            '<tr><td>4</td><td>柏克莱</td><td>11,772字</td><td>汉文（白话小说体）</td></tr>' +
-            '<tr><td>5</td><td>莫斯科</td><td>49,139字</td><td>韩文谚文</td></tr>' +
-            '<tr><td>6</td><td>小说集版</td><td>28,939字</td><td>韩文谚文</td></tr>' +
-            '<tr><td>7</td><td>手抄本</td><td>2,484字</td><td>汉文（简体）</td></tr>' +
-          '</tbody>' +
-        '</table>' +
-      '</div>' +
-    '</div>';
-
-    html += '<div class="content-section">' +
-      '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:12px">关键发现</h3>' +
-      '<div class="insight-cards">' +
-        '<div class="insight-card">' +
-          '<div class="insight-text">东洋文库版本字数最多（56,236字），内容最完整</div>' +
-        '</div>' +
-        '<div class="insight-card">' +
-          '<div class="insight-text">柏克莱版本最简略，仅11,772字</div>' +
-        '</div>' +
-        '<div class="insight-card">' +
-          '<div class="insight-text">七版本分属汉文与韩文谚文两大系统</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-
-    html += '<div class="content-section">' +
-      '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:8px">小说人物</h3>' +
-      '<p style="font-size:14px;color:var(--color-text-light);margin-bottom:12px">点击人物卡片查看其历史身份与小说形象。</p>' +
-      '<div class="filter-buttons" id="researchCharFilter">' +
-        '<button class="filter-btn active" data-novel="all">全部 (' + charactersData.length + ')</button>' +
-        '<button class="filter-btn" data-novel="renchenlu">壬辰录 (' + countWork('壬辰录') + ')</button>' +
-        '<button class="filter-btn" data-novel="mengjian">梦见诸葛亮 (' + countWork('梦见诸葛亮') + ')</button>' +
-      '</div>' +
-      '<div class="char-list" id="researchCharGrid"></div>' +
-    '</div>';
-
-    container.innerHTML = html;
-
-    renderCharGrid(document.getElementById('researchCharGrid'), charactersData);
-
-    document.querySelectorAll('#researchCharFilter .filter-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('#researchCharFilter .filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        const novel = btn.dataset.novel;
-        const filtered = novel === 'all' ? charactersData :
-          charactersData.filter(function(c) { return c.relatedWork === (novel === 'renchenlu' ? '壬辰录' : '梦见诸葛亮'); });
-        renderCharGrid(document.getElementById('researchCharGrid'), filtered);
-      });
-    });
+    // 此函数已废弃，由 renderResearchSubContent 统一处理
+    return;
   }
 
   async function renderResearchLiterature(container) {
@@ -1100,7 +1281,12 @@
 
     main.innerHTML =
       '<section class="page-section active" id="page-profile">' +
-      '<div class="content-area" style="padding:0;background:transparent;border:none">' +
+      '<div class="page-header">' +
+        '<button class="back-btn" onclick="window.app.goBack()">←</button>' +
+        '<h1 class="page-title">我的</h1>' +
+        '<div class="header-action"></div>' +
+      '</div>' +
+      '<div class="content-area content-with-header" style="padding:0;background:transparent;border:none">' +
           '<div class="progress-card">' +
             '<div class="progress-header">' +
               '<h3 style="font-size:16px;color:var(--color-primary);margin:0">论文进度追踪</h3>' +
@@ -1117,7 +1303,7 @@
             '</div>' +
             '<div class="progress-item">' +
               '<div class="progress-label">参考文献</div>' +
-              '<div class="progress-value">已完成：20 / 目标：50 篇（外文：8 / 20 篇）</div>' +
+              '<div class="progress-value">（中文20 / 外文50）</div>' +
             '</div>' +
           '</div>' +
 
@@ -1215,10 +1401,15 @@
     navigateTo(hash);
   }
 
+  function goBack() {
+    navigateTo('text');
+  }
+
   // 导出到全局
   window.app = {
     showCharacter: showCharacter,
     showBattle: showBattle,
+    goBack: goBack,
     addLiterature: addLiterature,
     updateLiterature: updateLiterature,
     deleteLiterature: deleteLiterature,

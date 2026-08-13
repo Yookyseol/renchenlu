@@ -22,6 +22,7 @@
   --radius: 12px;
   --radius-sm: 8px;
   --bottom-nav-height: 64px;
+  --top-nav-height: 44px;
 }
 
 * {
@@ -46,6 +47,58 @@ body {
   min-height: 100vh;
   max-width: 800px;
   margin: 0 auto;
+}
+
+/* ========== 顶部导航栏（微信风格） ========== */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--top-nav-height);
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.page-header .back-btn {
+  font-size: 22px;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: 8px;
+  margin-left: -8px;
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.page-header .page-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.page-header .action-btn {
+  font-size: 20px;
+  color: var(--color-primary);
+  padding: 8px;
+  margin-right: -8px;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* 内容区顶部留出导航栏高度 */
+.content-with-header {
+  padding-top: calc(var(--top-nav-height) + 12px);
 }
 
 /* ========== 底部导航栏 ========== */
@@ -164,6 +217,12 @@ body {
   border: 1px solid var(--color-border);
   border-top: none;
   padding: 12px 16px;
+  animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .filter-groups {
@@ -177,6 +236,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.filter-group.hidden {
+  display: none;
 }
 
 .filter-group-title {
@@ -209,8 +272,8 @@ body {
 }
 
 .filter-chip.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: #07c160;
+  border-color: #07c160;
   color: white;
 }
 
@@ -242,13 +305,14 @@ body {
 }
 
 .btn-confirm {
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
+  background: #07c160;
+  border: 1px solid #07c160;
   color: white;
 }
 
 .btn-confirm:hover {
-  background: var(--color-primary-dark);
+  background: #06ad56;
+  border-color: #06ad56;
 }
 
 /* ========== 史料页面标签 ========== */
@@ -656,9 +720,9 @@ body {
 }
 
 .map-tab-btn.active {
-  background: var(--color-primary);
+  background: #07c160;
   color: white;
-  border-color: var(--color-primary);
+  border-color: #07c160;
 }
 
 #mapContainer {
@@ -688,19 +752,44 @@ body {
 /* Leaflet Popup样式 */
 .map-popup {
   min-width: 150px;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
-.map-popup h4 {
-  margin: 0 0 6px 0;
+.map-popup strong {
   font-size: 14px;
-  color: var(--color-primary);
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 4px;
 }
 
-.map-popup p {
-  margin: 0;
+.map-popup .popup-date {
+  font-size: 12px;
+  color: var(--color-text-light);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.map-popup .popup-battle-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-light);
   font-size: 12px;
   color: var(--color-text-light);
   line-height: 1.5;
+}
+
+/* 战役标记样式 */
+.battle-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.battle-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 /* ========== 文献卡片 ========== */
@@ -990,6 +1079,17 @@ body {
   font-size: 16px;
   line-height: 2;
   min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.content-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-area::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
 }
 
 .content-area h1 {
@@ -1234,12 +1334,15 @@ body {
 .progress-label {
   font-size: 14px;
   color: var(--color-text-light);
+  white-space: nowrap;
 }
 
 .progress-value {
   font-size: 14px;
   color: var(--color-text);
   font-weight: 500;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .timeline-steps {
@@ -1338,16 +1441,18 @@ body {
   right: 12px;
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 18px;
   color: var(--color-text-light);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   z-index: 1;
+  line-height: 1;
 }
 
 .modal-close:hover {
   background: var(--color-border-light);
+  color: var(--color-text);
 }
 
 .modal-body {
@@ -1800,4 +1905,151 @@ button, a, .clickable {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ========== v6.4 新增样式 ========== */
+
+/* 地图容器固定高度 */
+.map-container {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.map-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.map-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* 战役容器固定高度 */
+.battles-container {
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-top: 12px;
+}
+
+.battles-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.battles-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* 人物列表容器固定高度 */
+.char-list-container {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.char-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.char-list-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* 图例样式 */
+.map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 研究子Tab样式 */
+.sub-tab-bar {
+  display: flex;
+  background: #f7f7f7;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 12px;
+  gap: 4px;
+}
+
+.sub-tab-item {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-tab-item:hover {
+  color: #07c160;
+}
+
+.sub-tab-item.active {
+  color: #07c160;
+  border-bottom-color: #07c160;
+  font-weight: 600;
+}
+
+/* 关键发现卡片 */
+.finding-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.finding-type {
+  display: inline-block;
+  font-size: 11px;
+  color: #07c160;
+  background: rgba(7, 193, 96, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+/* 弹窗样式优化 */
+.modal-content {
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-body .modal-section {
+  margin-bottom: 16px;
+}
+
+.modal-body .modal-section h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.modal-body .modal-section p {
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
