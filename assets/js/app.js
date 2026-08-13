@@ -314,7 +314,7 @@
 
     main.innerHTML = '<section class="page-section active" id="page-shiliao">' +
       '<div class="shiliao-tabs">' +
-        '<div class="shiliao-tab ' + (currentShiliaoTab === 'map' ? 'active' : '') + '" data-tab="map">壬辰倭乱战争进程图</div>' +
+        '<div class="shiliao-tab ' + (currentShiliaoTab === 'map' ? 'active' : '') + '" data-tab="map">背景地图</div>' +
         '<div class="shiliao-tab ' + (currentShiliaoTab === 'timeline' ? 'active' : '') + '" data-tab="timeline">时间线</div>' +
         '<div class="shiliao-tab ' + (currentShiliaoTab === 'battles' ? 'active' : '') + '" data-tab="battles">战役</div>' +
       '</div>' +
@@ -359,7 +359,6 @@
         '<div class="timeline-date">' + t.date + '</div>' +
         '<div class="timeline-event">' + t.event + '</div>' +
         '<div class="timeline-desc">' + t.desc + '</div>' +
-        '<div class="timeline-source">出处：' + t.source + '</div>' +
       '</div>';
     });
 
@@ -370,10 +369,8 @@
   async function renderMapTab(container) {
     container.innerHTML = '<div class="map-container">' +
       '<div class="map-tabs" id="mapTabs">' +
-        '<button class="map-tab-btn active" data-map="war">战争进程图</button>' +
-        '<button class="map-tab-btn" data-map="provinces">行政区划图</button>' +
-        '<button class="map-tab-btn" data-map="zhuge">诸葛亮崇拜分布图</button>' +
-        '<button class="map-tab-btn" data-map="colonial">殖民扩张图</button>' +
+        '<button class="map-tab-btn active" data-map="war">战争地图</button>' +
+        '<button class="map-tab-btn" data-map="colonial">日本侵略史</button>' +
       '</div>' +
       '<div id="mapContainer" style="width:100%;height:400px;border-radius:8px;margin-top:12px;overflow:hidden"></div>' +
       '<div class="map-legend" style="padding:12px;font-size:13px;color:var(--color-text-light)">' +
@@ -421,15 +418,44 @@
       maxZoom: 18
     });
 
-    // 默认使用历史物理地图
-    historicalLayer.addTo(leafletMap);
+    // 默认使用现代地图
+    modernLayer.addTo(leafletMap);
 
     // 添加图层控制
     const baseMaps = {
-      '历史地图（默认）': historicalLayer,
-      '现代地图': modernLayer
+      '现代地图（默认）': modernLayer,
+      '历史地形图': historicalLayer
     };
     L.control.layers(baseMaps).addTo(leafletMap);
+
+    // 关键城市标注
+    const cityLabels = [
+      { lat: 35.18, lng: 129.08, name: '釜山', note: '日军登陆起点' },
+      { lat: 35.22, lng: 128.60, name: '梁山', note: '李舜臣首战' },
+      { lat: 35.87, lng: 128.60, name: '大邱', note: '日军北路进攻' },
+      { lat: 36.56, lng: 128.80, name: '安东', note: '日军北进目标' },
+      { lat: 37.57, lng: 127.00, name: '汉城（首尔）', note: '朝鲜首都，陷落' },
+      { lat: 36.35, lng: 127.38, name: '大田', note: '忠清道重镇' },
+      { lat: 39.03, lng: 125.75, name: '平壤', note: '明军收复目标' },
+      { lat: 39.55, lng: 125.13, name: '义州', note: '宣祖北逃终点' },
+      { lat: 34.75, lng: 126.35, name: '闲山岛', note: '李舜臣大捷' },
+      { lat: 34.85, lng: 127.38, name: '鸣梁', note: '奇迹海战' },
+      { lat: 34.60, lng: 127.85, name: '露梁', note: '战争终结' },
+      { lat: 34.96, lng: 127.13, name: '顺天', note: '明军围攻倭城' }
+    ];
+
+    cityLabels.forEach(function(city) {
+      var marker = L.marker([city.lat, city.lng], {
+        icon: L.divIcon({
+          className: 'city-label',
+          html: '<div class="city-label-text">' + city.name + '</div>',
+          iconSize: [80, 24],
+          iconAnchor: [40, 12]
+        })
+      }).addTo(leafletMap);
+      marker.bindPopup('<div class="map-popup"><h4>' + city.name + '</h4><p>' + city.note + '</p></div>');
+      markers.push(marker);
+    });
 
     // 添加标记点
     const markers = [];
@@ -525,15 +551,24 @@
         markers.push(marker);
       });
     } else if (mapType === 'colonial') {
-      const colonialSites = [
-        { name: '江华岛', lat: 37.58, lng: 126.55, year: '1876' },
-        { name: '釜山', lat: 35.18, lng: 129.08, year: '1876' },
-        { name: '汉城', lat: 37.57, lng: 127.00, year: '1910' },
-        { name: '首尔', lat: 37.55, lng: 126.98, year: '1910' }
+      // 日本侵略史地图：甲午战争、壬辰倭乱、日韩合并、九一八事变、全面侵华
+      const japanAggression = [
+        { name: '甲午战争（1894-1895）', lat: 37.57, lng: 126.98, desc: '中日甲午战争，日本获胜' },
+        { name: '壬辰倭乱（1592-1598）', lat: 36.0, lng: 127.5, desc: '日本入侵朝鲜' },
+        { name: '日韩合并（1910）', lat: 37.55, lng: 126.98, desc: '朝鲜沦为日本殖民地' },
+        { name: '九一八事变（1931）', lat: 41.8, lng: 123.4, desc: '日本侵占中国东北' },
+        { name: '全面侵华（1937-1945）', lat: 39.9, lng: 116.4, desc: '日本全面侵华战争' }
       ];
-      colonialSites.forEach(function(s) {
-        const marker = L.marker([s.lat, s.lng]).addTo(leafletMap);
-        marker.bindPopup('<div class="map-popup"><h4>' + s.name + '</h4><p>' + s.year + '年重要地点</p></div>');
+      japanAggression.forEach(function(site) {
+        const marker = L.marker([site.lat, site.lng], {
+          icon: L.divIcon({
+            className: 'aggression-marker',
+            html: '<div class="aggression-marker-dot"></div>',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+          })
+        }).addTo(leafletMap);
+        marker.bindPopup('<div class="map-popup"><h4>' + site.name + '</h4><p>' + site.desc + '</p></div>');
         markers.push(marker);
       });
     }
@@ -574,15 +609,22 @@
       '<button class="filter-btn active" data-novel="all">全部 (' + charactersData.length + ')</button>' +
       '<button class="filter-btn" data-novel="renchenlu">壬辰录 (' + (novelCounts['壬辰录'] || 0) + ')</button>' +
       '<button class="filter-btn" data-novel="mengjian">梦见诸葛亮 (' + (novelCounts['梦见诸葛亮'] || 0) + ')</button>' +
-    '</div><div class="char-grid" id="charGrid">';
+    '</div><div class="char-list" id="charGrid">';
 
+    var idx = 1;
     charactersData.forEach(function(c) {
-      html += '<div class="char-card" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
-        '<div class="name">' + c.name + '</div>' +
-        '<div class="subtitle">' + c.title.split('·')[0] + '</div>' +
-        '<span class="tag">' + c.korean + '</span>' +
-        '<span class="char-novel-tag">' + (c.relatedWork || '壬辰录') + '</span>' +
+      html += '<div class="char-list-item" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
+        '<div class="char-index">' + idx + '</div>' +
+        '<div class="char-info">' +
+          '<div class="char-name">' + c.name + '</div>' +
+          '<div class="char-title">' + c.title.split('·')[0] + '</div>' +
+        '</div>' +
+        '<div class="char-tags">' +
+          '<span class="char-korean">' + c.korean + '</span>' +
+          '<span class="char-work">' + (c.relatedWork || '壬辰录') + '</span>' +
+        '</div>' +
       '</div>';
+      idx++;
     });
     html += '</div>';
     container.innerHTML = html;
@@ -594,18 +636,25 @@
         btn.classList.add('active');
         const filtered = novel === 'all' ? charactersData :
           charactersData.filter(function(c) { return c.relatedWork === (novel === 'renchenlu' ? '壬辰录' : '梦见诸葛亮'); });
-        const grid = document.getElementById('charGrid');
-        if (grid) {
-          let gridHtml = '';
+        const list = document.getElementById('charGrid');
+        if (list) {
+          let listHtml = '';
+          var idx2 = 1;
           filtered.forEach(function(c) {
-            gridHtml += '<div class="char-card" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
-              '<div class="name">' + c.name + '</div>' +
-              '<div class="subtitle">' + c.title.split('·')[0] + '</div>' +
-              '<span class="tag">' + c.korean + '</span>' +
-              '<span class="char-novel-tag">' + (c.relatedWork || '壬辰录') + '</span>' +
+            listHtml += '<div class="char-list-item" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
+              '<div class="char-index">' + idx2 + '</div>' +
+              '<div class="char-info">' +
+                '<div class="char-name">' + c.name + '</div>' +
+                '<div class="char-title">' + c.title.split('·')[0] + '</div>' +
+              '</div>' +
+              '<div class="char-tags">' +
+                '<span class="char-korean">' + c.korean + '</span>' +
+                '<span class="char-work">' + (c.relatedWork || '壬辰录') + '</span>' +
+              '</div>' +
             '</div>';
+            idx2++;
           });
-          grid.innerHTML = gridHtml;
+          list.innerHTML = listHtml;
         }
       });
     });
@@ -874,16 +923,22 @@
       '<button class="filter-btn active" data-novel="all">全部 (' + charactersData.length + ')</button>' +
       '<button class="filter-btn" data-novel="renchenlu">壬辰录 (' + (novelCounts['壬辰录'] || 0) + ')</button>' +
       '<button class="filter-btn" data-novel="mengjian">梦见诸葛亮 (' + (novelCounts['梦见诸葛亮'] || 0) + ')</button>' +
-    '</div><div class="char-grid" id="researchCharGrid">';
+    '</div><div class="char-list" id="researchCharGrid">';
 
+    var idx = 1;
     charactersData.forEach(function(c) {
-      html += '<div class="char-card" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
-        '<div class="avatar">' + (c.avatar || '👤') + '</div>' +
-        '<div class="name">' + c.name + '</div>' +
-        '<div class="subtitle">' + c.title.split('·')[0] + '</div>' +
-        '<span class="tag">' + c.korean + '</span>' +
-        '<span class="char-novel-tag">' + (c.relatedWork || '壬辰录') + '</span>' +
+      html += '<div class="char-list-item" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
+        '<div class="char-index">' + idx + '</div>' +
+        '<div class="char-info">' +
+          '<div class="char-name">' + c.name + '</div>' +
+          '<div class="char-title">' + c.title.split('·')[0] + '</div>' +
+        '</div>' +
+        '<div class="char-tags">' +
+          '<span class="char-korean">' + c.korean + '</span>' +
+          '<span class="char-work">' + (c.relatedWork || '壬辰录') + '</span>' +
+        '</div>' +
       '</div>';
+      idx++;
     });
     html += '</div>';
     container.innerHTML = html;
@@ -895,19 +950,25 @@
         btn.classList.add('active');
         const filtered = novel === 'all' ? charactersData :
           charactersData.filter(function(c) { return c.relatedWork === (novel === 'renchenlu' ? '壬辰录' : '梦见诸葛亮'); });
-        const grid = document.getElementById('researchCharGrid');
-        if (grid) {
-          let gridHtml = '';
+        const list = document.getElementById('researchCharGrid');
+        if (list) {
+          let listHtml = '';
+          var idx2 = 1;
           filtered.forEach(function(c) {
-            gridHtml += '<div class="char-card" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
-              '<div class="avatar">' + (c.avatar || '👤') + '</div>' +
-              '<div class="name">' + c.name + '</div>' +
-              '<div class="subtitle">' + c.title.split('·')[0] + '</div>' +
-              '<span class="tag">' + c.korean + '</span>' +
-              '<span class="char-novel-tag">' + (c.relatedWork || '壬辰录') + '</span>' +
+            listHtml += '<div class="char-list-item" onclick="window.app.showCharacter(\'' + c.id + '\')">' +
+              '<div class="char-index">' + idx2 + '</div>' +
+              '<div class="char-info">' +
+                '<div class="char-name">' + c.name + '</div>' +
+                '<div class="char-title">' + c.title.split('·')[0] + '</div>' +
+              '</div>' +
+              '<div class="char-tags">' +
+                '<span class="char-korean">' + c.korean + '</span>' +
+                '<span class="char-work">' + (c.relatedWork || '壬辰录') + '</span>' +
+              '</div>' +
             '</div>';
+            idx2++;
           });
-          grid.innerHTML = gridHtml;
+          list.innerHTML = listHtml;
         }
       });
     });
@@ -924,15 +985,15 @@
     html += '<div class="content-section">' +
       '<div class="version-table-wrapper">' +
         '<table class="version-table">' +
-          '<thead><tr><th>序号</th><th>版本名称</th><th>字数</th><th>行数</th><th>语言</th></tr></thead>' +
+          '<thead><tr><th>序号</th><th>版本名称</th><th>字符数</th><th>语言</th></tr></thead>' +
           '<tbody>' +
-            '<tr><td>1</td><td>东洋文库</td><td>~92KB</td><td>404行</td><td>汉文（文言文）</td></tr>' +
-            '<tr><td>2</td><td>国立</td><td>~112KB</td><td>594行</td><td>汉文（文言文）</td></tr>' +
-            '<tr><td>3</td><td>精神文化</td><td>~154KB</td><td>237行</td><td>汉文（白话小说体）</td></tr>' +
-            '<tr><td>4</td><td>柏克莱</td><td>~35KB</td><td>62行</td><td>汉文（白话小说体）</td></tr>' +
-            '<tr><td>5</td><td>莫斯科</td><td>~162KB</td><td>412行</td><td>韩文谚文</td></tr>' +
-            '<tr><td>6</td><td>小说集版</td><td>~91KB</td><td>231行</td><td>韩文谚文</td></tr>' +
-            '<tr><td>7</td><td>手抄本</td><td>~7KB</td><td>45行</td><td>汉文（简体）</td></tr>' +
+            '<tr><td>1</td><td>东洋文库</td><td>56,236字</td><td>汉文（文言文）</td></tr>' +
+            '<tr><td>2</td><td>国立</td><td>37,034字</td><td>汉文（文言文）</td></tr>' +
+            '<tr><td>3</td><td>精神文化</td><td>51,208字</td><td>汉文（白话小说体）</td></tr>' +
+            '<tr><td>4</td><td>柏克莱</td><td>11,772字</td><td>汉文（白话小说体）</td></tr>' +
+            '<tr><td>5</td><td>莫斯科</td><td>49,139字</td><td>韩文谚文</td></tr>' +
+            '<tr><td>6</td><td>小说集版</td><td>28,939字</td><td>韩文谚文</td></tr>' +
+            '<tr><td>7</td><td>手抄本</td><td>2,484字</td><td>汉文（简体）</td></tr>' +
           '</tbody>' +
         '</table>' +
       '</div>' +
@@ -942,10 +1003,10 @@
       '<h3 style="font-size:17px;color:var(--color-primary);margin-bottom:12px">关键发现</h3>' +
       '<div class="insight-cards">' +
         '<div class="insight-card">' +
-          '<div class="insight-text">国立版本行数最多（594行），内容最完整</div>' +
+          '<div class="insight-text">东洋文库版本字数最多（56,236字），内容最完整</div>' +
         '</div>' +
         '<div class="insight-card">' +
-          '<div class="insight-text">柏克莱版本最简略，仅62行</div>' +
+          '<div class="insight-text">柏克莱版本最简略，仅11,772字</div>' +
         '</div>' +
         '<div class="insight-card">' +
           '<div class="insight-text">七版本分属汉文与韩文谚文两大系统</div>' +
@@ -961,7 +1022,7 @@
         '<button class="filter-btn" data-novel="renchenlu">壬辰录 (' + countWork('壬辰录') + ')</button>' +
         '<button class="filter-btn" data-novel="mengjian">梦见诸葛亮 (' + countWork('梦见诸葛亮') + ')</button>' +
       '</div>' +
-      '<div class="char-grid" id="researchCharGrid"></div>' +
+      '<div class="char-list" id="researchCharGrid"></div>' +
     '</div>';
 
     container.innerHTML = html;

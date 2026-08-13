@@ -129,6 +129,9 @@ body {
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .dropdown-header {
@@ -500,6 +503,21 @@ body {
 /* ========== 时间线上下布局 ========== */
 .timeline-vertical {
   padding: 16px 0;
+  max-height: 520px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.timeline-vertical::-webkit-scrollbar {
+  width: 6px;
+}
+
+.timeline-vertical::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
 }
 
 .timeline-node {
@@ -667,6 +685,24 @@ body {
   pointer-events: auto !important;
 }
 
+/* Leaflet Popup样式 */
+.map-popup {
+  min-width: 150px;
+}
+
+.map-popup h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+.map-popup p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-light);
+  line-height: 1.5;
+}
+
 /* ========== 文献卡片 ========== */
 .lit-card {
   background: var(--color-bg-card);
@@ -708,12 +744,119 @@ body {
   background: rgba(44, 95, 124, 0.03);
 }
 
-/* ========== 人物卡片 ========== */
-.char-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+/* ========== 人物列表 ========== */
+.char-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 20px;
+}
+
+.char-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid var(--color-character);
+}
+
+.char-list-item:hover {
+  border-color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  background: var(--color-bg);
+}
+
+.char-list-item .char-index {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.char-list-item .char-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.char-list-item .char-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.char-list-item .char-title {
+  font-size: 12px;
+  color: var(--color-text-light);
+  line-height: 1.4;
+}
+
+.char-list-item .char-tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.char-list-item .char-korean {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--color-character-light);
+  color: var(--color-korean);
+}
+
+.char-list-item .char-work {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--color-border-light);
+  color: var(--color-text-light);
+}
+
+/* 城市标注样式 */
+.city-label {
+  background: transparent !important;
+  border: none !important;
+}
+
+.city-label-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  background: rgba(255,255,255,0.9);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 日本侵略史标记样式 */
+.aggression-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.aggression-marker-dot {
+  width: 12px;
+  height: 12px;
+  background: #c0392b;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 .char-card {
@@ -770,8 +913,6 @@ body {
   background: var(--color-border-light);
   color: var(--color-text-light);
 }
-
-/* ========== 战役卡片 ========== */
 .battle-list {
   display: flex;
   flex-direction: column;
@@ -990,7 +1131,7 @@ body {
   background: var(--color-border-light);
 }
 
-/* ========== 字数对比进度条 ========== */
+/* ========== 战役卡片 ========== */
 .word-count-bar {
   display: flex;
   align-items: center;
@@ -1612,10 +1753,6 @@ body {
 
   .tab-btn {
     min-width: 140px;
-  }
-
-  .char-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 
   #mapContainer {
